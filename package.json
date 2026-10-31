@@ -20,7 +20,16 @@
     "report:open": "playwright show-report reports/html",
     "lint": "eslint .",
     "lint:report": "eslint . -f json -o reports/eslint/eslint.json",
-    "typecheck": "bddgen && tsc --noEmit"
+    "typecheck": "bddgen && tsc --noEmit",
+    "test:offline": "playwright test --project=api-offline",
+    "test:ui": "bddgen && playwright test --ui",
+    "test:headed": "bddgen && playwright test --headed --project=e2e --project=ui",
+    "test:debug": "bddgen && playwright test --debug",
+    "test:last-failed": "bddgen && playwright test --last-failed",
+    "test:changed": "bddgen && playwright test --only-changed=origin/main",
+    "test:flaky-hunt": "bddgen && playwright test --repeat-each=5 --retries=0 --workers=4",
+    "codegen": "playwright codegen https://automationintesting.online",
+    "trace": "playwright show-trace"
   },
   "author": "Wassim Askri",
   "license": "MIT",

@@ -1,0 +1,8 @@
+{
+  "playwright.reuseBrowser": true,
+  "playwright.showTrace": true,
+  "cucumber.features": ["features/**/*.feature"],
+  "cucumber.glue": ["steps/**/*.ts", "fixtures/**/*.ts"],
+  "editor.formatOnSave": true,
+  "eslint.useFlatConfig": true
+}
