@@ -58,11 +58,20 @@ jobs:
           path: reports/
           retention-days: 14
 
-  functional:
-    name: Tests fonctionnels (E2E Gherkin, intégration, API)
+  # Campagne répartie sur 3 machines (docs: test-sharding), dans l'image Docker
+  # officielle Playwright : navigateurs et dépendances déjà installés (docs: docker).
+  functional-shard:
+    name: Tests fonctionnels · shard ${{ matrix.shard }}/3
     needs: static
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -70,24 +79,44 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - name: Exécuter la campagne
-        id: tests
-        continue-on-error: true
-        run: npm test
-      - name: Rapport de synthèse de campagne
+      - name: Exécuter le shard
+        run: npx bddgen && npx playwright test --shard=${{ matrix.shard }}/3 --reporter=blob
+      - uses: actions/upload-artifact@v4
         if: always()
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 3
+
+  functional:
+    name: Tests fonctionnels · rapport fusionné
+    needs: functional-shard
+    if: always() && needs.functional-shard.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+      - name: Fusionner les rapports des shards
+        run: npx playwright merge-reports --config merge.config.ts ./all-blob-reports
+      - name: Rapport de synthèse de campagne
         run: npm run report
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: functional-reports
-          path: |
-            reports/
-            test-results/
+          path: reports/
           retention-days: 14
-      - name: Échec si la campagne a échoué
-        if: steps.tests.outcome == 'failure'
+      - name: Échec si un shard a échoué
+        if: needs.functional-shard.result == 'failure'
         run: exit 1
 
   api-collections:
@@ -148,7 +177,7 @@ jobs:
           path: artifacts
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: artifacts/reports/html
+          path: artifacts/html
       - id: deploy
         uses: actions/deploy-pages@v4
 
@@ -178,8 +207,8 @@ jobs:
             const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const jobs = { 'Fonctionnels': process.env.FUNCTIONAL, 'Collections API': process.env.COLLECTIONS, 'Charge k6': process.env.LOAD };
             const failed = Object.entries(jobs).filter(([, r]) => r !== 'success');
-            const summary = fs.existsSync('artifacts/reports/campaign-summary.md')
-              ? fs.readFileSync('artifacts/reports/campaign-summary.md', 'utf8') : '_Rapport de synthèse indisponible._';
+            const summary = fs.existsSync('artifacts/campaign-summary.md')
+              ? fs.readFileSync('artifacts/campaign-summary.md', 'utf8') : '_Rapport de synthèse indisponible._';
             const table = Object.entries(jobs).map(([k, r]) => `| ${k} | ${r === 'success' ? '✅' : '❌'} ${r} |`).join('\n');
 
             await github.rest.issues.createLabel({ ...context.repo, name: label, color: 'd73a4a',

@@ -7,3 +7,4 @@ blob-report/
 .env
 .DS_Store
 .auth/
+all-blob-reports/
