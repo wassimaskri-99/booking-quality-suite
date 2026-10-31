@@ -36,7 +36,9 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
   cleanup: async ({ api, token }, use) => {
     const ids: number[] = [];
-    await use((id) => ids.push(id));
+    await use((id) => {
+      if (id) ids.push(id); // ignore les créations refusées (pas d'identifiant)
+    });
     for (const id of ids) {
       await api.delete(id, token); // nettoyage best-effort : la ressource peut déjà être supprimée
     }

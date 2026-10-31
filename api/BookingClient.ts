@@ -3,7 +3,7 @@ import type { Booking } from '../test-data';
 
 /** Client de l'API restful-booker : centralise les URL, en-têtes et contrôles de statut. */
 export class BookingClient {
-  constructor(private readonly request: APIRequestContext) {}
+  constructor(readonly request: APIRequestContext) {}
 
   private readonly json = { Accept: 'application/json', 'Content-Type': 'application/json' };
 

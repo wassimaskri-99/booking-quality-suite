@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import type { ContactMessage } from '../test-data';
 
 export class HomePage {
@@ -38,12 +38,20 @@ export class HomePage {
   }
 
   async sendContactMessage(message: Partial<ContactMessage>) {
-    await this.contact.name.fill(message.name ?? '');
-    await this.contact.email.fill(message.email ?? '');
-    await this.contact.phone.fill(message.phone ?? '');
-    await this.contact.subject.fill(message.subject ?? '');
-    await this.contact.description.fill(message.description ?? '');
-    await this.contact.submit.click();
+    // Étape « boxée » (docs: test-annotations) : le rapport affiche une seule étape
+    // métier, et une erreur pointe vers l'appel dans le test, pas vers le Page Object.
+    await test.step(
+      `Envoyer le message de contact « ${message.subject ?? ''} »`,
+      async () => {
+        await this.contact.name.fill(message.name ?? '');
+        await this.contact.email.fill(message.email ?? '');
+        await this.contact.phone.fill(message.phone ?? '');
+        await this.contact.subject.fill(message.subject ?? '');
+        await this.contact.description.fill(message.description ?? '');
+        await this.contact.submit.click();
+      },
+      { box: true },
+    );
   }
 
   thankYouMessage(name: string) {
