@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig } from 'playwright-bdd';
 import { env } from './config/env';
 
+const ADMIN_STATE = '.auth/admin.json';
+
 /**
  * Les critères d'acceptance Gherkin (features/) sont transformés en tests
  * Playwright par playwright-bdd (commande `bddgen`).
@@ -41,9 +43,32 @@ export default defineConfig({
     timeout: 15_000,
   },
   projects: [
+    // ── Setup / teardown (docs: test-global-setup-teardown, auth) ─────────────
+    {
+      name: 'health',
+      testDir: 'tests/setup',
+      testMatch: /health\.setup\.ts/,
+      retries: 0,
+    },
+    {
+      name: 'auth',
+      testDir: 'tests/setup',
+      testMatch: /auth\.setup\.ts/,
+      dependencies: ['health'],
+      teardown: 'cleanup',
+      use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
+    },
+    {
+      name: 'cleanup',
+      testDir: 'tests/setup',
+      testMatch: /cleanup\.teardown\.ts/,
+    },
+
+    // ── Campagne ───────────────────────────────────────────────────────────────
     {
       name: 'api',
       testDir: 'tests/api',
+      dependencies: ['health'],
       use: { baseURL: env.bookingApiUrl },
     },
     {
@@ -56,12 +81,21 @@ export default defineConfig({
     {
       name: 'integration',
       testDir: 'tests/integration',
+      dependencies: ['health'],
       use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
     },
     {
       name: 'e2e',
       testDir: bddTestDir,
+      dependencies: ['health'],
       use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
+    },
+    {
+      // Back-office : session réutilisée depuis le setup project « auth ».
+      name: 'admin',
+      testDir: 'tests/admin',
+      dependencies: ['auth'],
+      use: { ...devices['Desktop Chrome'], baseURL: env.webUrl, storageState: ADMIN_STATE },
     },
   ],
 });
