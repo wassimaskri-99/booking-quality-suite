@@ -28,6 +28,7 @@ export default defineConfig({
     ['html', { outputFolder: 'reports/html', open: 'never' }],
     ['junit', { outputFile: 'reports/junit/results.xml' }],
     ['json', { outputFile: 'reports/json/results.json' }],
+    ['./reporters/severity-reporter.ts'],
   ],
   // Références visuelles rangées par OS et par projet (docs: test-snapshots).
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}-{platform}{ext}',
