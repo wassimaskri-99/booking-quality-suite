@@ -91,6 +91,22 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
     },
     {
+      // Fonctionnalités avancées : réseau, horloge, émulation, snapshots, a11y, événements.
+      name: 'ui',
+      testDir: 'tests/ui',
+      testIgnore: /mobile\.spec\.ts/,
+      dependencies: ['health'],
+      use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
+    },
+    {
+      // docs: emulation — appareil mobile réel émulé (écran tactile, viewport, user agent).
+      name: 'mobile',
+      testDir: 'tests/ui',
+      testMatch: /mobile\.spec\.ts/,
+      dependencies: ['health'],
+      use: { ...devices['Pixel 7'], baseURL: env.webUrl },
+    },
+    {
       // Back-office : session réutilisée depuis le setup project « auth ».
       name: 'admin',
       testDir: 'tests/admin',
