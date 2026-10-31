@@ -29,6 +29,10 @@ export default defineConfig({
     ['junit', { outputFile: 'reports/junit/results.xml' }],
     ['json', { outputFile: 'reports/json/results.json' }],
   ],
+  // Références visuelles rangées par OS et par projet (docs: test-snapshots).
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}-{platform}{ext}',
+  // Une référence absente est créée au premier passage au lieu de faire échouer le test.
+  updateSnapshots: 'missing',
   use: {
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
