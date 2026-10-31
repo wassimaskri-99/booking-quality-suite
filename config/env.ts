@@ -8,6 +8,8 @@ export const env = {
   webUrl: process.env.WEB_URL ?? 'https://automationintesting.online',
   /** API REST de réservation testée en intégration et en charge. */
   bookingApiUrl: process.env.BOOKING_API_URL ?? 'https://restful-booker.herokuapp.com',
+  /** Port du bouchon de l'API de réservation (projet api-offline). */
+  mockPort: Number(process.env.MOCK_PORT ?? 4010),
   /** Comptes de démonstration publics, documentés par les éditeurs des applications. */
   admin: {
     username: process.env.ADMIN_USER ?? 'admin',

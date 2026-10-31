@@ -32,11 +32,26 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  // Bouchon de l'API démarré par Playwright pour le projet api-offline (docs: test-webserver).
+  webServer: {
+    command: `node mock-server/booking-api.mjs ${env.mockPort}`,
+    url: `http://localhost:${env.mockPort}/ping`,
+    reuseExistingServer: !process.env.CI,
+    stdout: 'ignore',
+    timeout: 15_000,
+  },
   projects: [
     {
       name: 'api',
       testDir: 'tests/api',
       use: { baseURL: env.bookingApiUrl },
+    },
+    {
+      // Mêmes tests API, sans réseau, contre le bouchon : utile hors ligne
+      // ou quand l'environnement de démo public est indisponible.
+      name: 'api-offline',
+      testDir: 'tests/api',
+      use: { baseURL: `http://localhost:${env.mockPort}` },
     },
     {
       name: 'integration',

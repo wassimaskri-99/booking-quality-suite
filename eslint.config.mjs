@@ -25,11 +25,12 @@ export default tseslint.config(
     rules: { 'playwright/no-standalone-expect': 'off' },
   },
   {
-    files: ['scripts/**/*.mjs', 'load/**/*.js'],
+    files: ['scripts/**/*.mjs', 'load/**/*.js', 'mock-server/**/*.mjs', 'reporters/**/*.mjs'],
     languageOptions: {
       globals: {
         process: 'readonly',
         console: 'readonly',
+        URL: 'readonly',
         __ENV: 'readonly',
         __VU: 'readonly',
         __ITER: 'readonly',
