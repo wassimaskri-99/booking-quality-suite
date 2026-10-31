@@ -1,0 +1,39 @@
+name: Mettre à jour les références visuelles
+
+# Génère les captures de référence (toHaveScreenshot) dans la même image Docker
+# que la CI, pour que les références Linux correspondent exactement au rendu
+# du pipeline (docs: test-snapshots, « use the same environment »).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: Générer les références Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Générer les captures
+        run: npx bddgen && npx playwright test tests/ui/snapshots.spec.ts --project=ui --update-snapshots
+      - name: Commit des références
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/ui/__screenshots__
+          if git diff --cached --quiet; then
+            echo "Références déjà à jour."
+          else
+            git commit -m "Update Linux visual baselines from CI image"
+            git push
+          fi
