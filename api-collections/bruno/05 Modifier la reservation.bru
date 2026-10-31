@@ -1,0 +1,30 @@
+meta {
+  name: 05 Modifier la réservation (PATCH)
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/booking/{{bookingId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Cookie: token={{token}}
+}
+
+body:json {
+  {
+    "totalprice": 999
+  }
+}
+
+tests {
+  test("TC-API-07 - seul le prix est modifié", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().totalprice).to.equal(999);
+    expect(res.getBody().lastname).to.equal("Bruno");
+  });
+}

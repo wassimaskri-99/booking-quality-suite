@@ -1,0 +1,17 @@
+meta {
+  name: 08 Réservation supprimée introuvable
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/booking/{{bookingId}}
+  body: none
+  auth: none
+}
+
+tests {
+  test("TC-API-08 - la réservation n'existe plus (404)", function () {
+    expect(res.getStatus()).to.equal(404);
+  });
+}

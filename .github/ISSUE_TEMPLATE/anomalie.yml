@@ -1,0 +1,66 @@
+name: 🐞 Anomalie
+description: Déclarer une anomalie détectée pendant une campagne de test
+title: "[ANO] "
+labels: [anomalie]
+body:
+  - type: dropdown
+    id: severite
+    attributes:
+      label: Sévérité
+      description: Voir la grille du plan de test (docs/plan-de-test.md §6)
+      options:
+        - Bloquante
+        - Critique
+        - Majeure
+        - Mineure
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de test
+      options: [E2E, Intégration, API, Charge, Sécurité, Exploratoire]
+    validations:
+      required: true
+  - type: input
+    id: references
+    attributes:
+      label: User Story / cas de test
+      placeholder: US-02 / TC-CON-03
+    validations:
+      required: true
+  - type: input
+    id: environnement
+    attributes:
+      label: Environnement et version
+      placeholder: https://automationintesting.online — commit abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Étapes pour reproduire
+      placeholder: |
+        1. Aller sur …
+        2. Saisir …
+        3. Cliquer sur …
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Résultat attendu
+    validations:
+      required: true
+  - type: textarea
+    id: obtenu
+    attributes:
+      label: Résultat obtenu
+      description: Joindre trace Playwright, capture, réponse API ou extrait de rapport
+    validations:
+      required: true
+  - type: dropdown
+    id: reproductibilite
+    attributes:
+      label: Reproductibilité
+      options: [Systématique, Intermittente, Une seule fois]

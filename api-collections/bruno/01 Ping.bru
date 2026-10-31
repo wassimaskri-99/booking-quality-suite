@@ -1,0 +1,17 @@
+meta {
+  name: 01 Ping
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ping
+  body: none
+  auth: none
+}
+
+tests {
+  test("TC-API-01 - l'API est disponible (201)", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

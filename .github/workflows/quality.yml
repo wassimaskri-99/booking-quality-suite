@@ -1,0 +1,207 @@
+name: Quality pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 5 * * *' # campagne de nuit : 06:00 heure de Tunis
+  workflow_dispatch:
+    inputs:
+      load:
+        description: 'Lancer aussi le test de charge (k6)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  static:
+    name: Analyse statique & données
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Valider et publier les jeux de données
+        run: npm run data:publish
+      - name: Typage TypeScript
+        run: npm run typecheck
+      - name: ESLint (règles Playwright)
+        run: |
+          npm run lint
+          npm run lint:report
+      - name: Vulnérabilités des dépendances de production
+        run: npm audit --omit=dev --audit-level=high
+      - name: Analyse SonarQube (SonarCloud)
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-reports
+          path: reports/
+          retention-days: 14
+
+  functional:
+    name: Tests fonctionnels (E2E Gherkin, intégration, API)
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Exécuter la campagne
+        id: tests
+        continue-on-error: true
+        run: npm test
+      - name: Rapport de synthèse de campagne
+        if: always()
+        run: npm run report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: functional-reports
+          path: |
+            reports/
+            test-results/
+          retention-days: 14
+      - name: Échec si la campagne a échoué
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+
+  api-collections:
+    name: Collections API (Bruno & Postman)
+    needs: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: mkdir -p reports/junit
+      - name: Bruno CLI
+        run: npm run test:bruno
+      - name: Postman (Newman)
+        if: always()
+        run: npm run test:postman
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-collections-reports
+          path: reports/junit/
+
+  load:
+    name: Charge (k6)
+    needs: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - run: mkdir -p reports/k6
+      - name: Smoke de charge (1 VU)
+        run: k6 run --summary-export=reports/k6/smoke-summary.json load/k6/smoke.js
+      - name: Charge nominale (5 VUs, nuit ou à la demande)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.load)
+        run: k6 run --summary-export=reports/k6/load-summary.json load/k6/load.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-reports
+          path: reports/k6/
+
+  publish-report:
+    name: Publier le rapport HTML (GitHub Pages)
+    needs: functional
+    if: always() && github.ref == 'refs/heads/main' && needs.functional.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: functional-reports
+          path: artifacts
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/reports/html
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  alert:
+    name: Alerte qualité (campagne de nuit)
+    needs: [functional, api-collections, load]
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: functional-reports
+          path: artifacts
+      - name: Ouvrir, mettre à jour ou fermer l'issue d'alerte
+        uses: actions/github-script@v7
+        env:
+          FUNCTIONAL: ${{ needs.functional.result }}
+          COLLECTIONS: ${{ needs['api-collections'].result }}
+          LOAD: ${{ needs.load.result }}
+        with:
+          script: |
+            const fs = require('fs');
+            const label = 'alerte-qualite';
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const jobs = { 'Fonctionnels': process.env.FUNCTIONAL, 'Collections API': process.env.COLLECTIONS, 'Charge k6': process.env.LOAD };
+            const failed = Object.entries(jobs).filter(([, r]) => r !== 'success');
+            const summary = fs.existsSync('artifacts/reports/campaign-summary.md')
+              ? fs.readFileSync('artifacts/reports/campaign-summary.md', 'utf8') : '_Rapport de synthèse indisponible._';
+            const table = Object.entries(jobs).map(([k, r]) => `| ${k} | ${r === 'success' ? '✅' : '❌'} ${r} |`).join('\n');
+
+            await github.rest.issues.createLabel({ ...context.repo, name: label, color: 'd73a4a',
+              description: 'Échec de la campagne de test planifiée' }).catch(() => {});
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, labels: label, state: 'open' });
+
+            if (!failed.length) {
+              for (const issue of open) {
+                await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number,
+                  body: `✅ Campagne revenue au vert : [exécution](${run}). Alerte fermée automatiquement.` });
+                await github.rest.issues.update({ ...context.repo, issue_number: issue.number, state: 'closed' });
+              }
+              core.info('Campagne verte : aucune alerte.');
+              return;
+            }
+
+            const body = `## 🚨 Campagne de test en échec\n\n| Étape | Résultat |\n|---|---|\n${table}\n\n[Voir l'exécution et les rapports](${run})\n\n${summary}`;
+            if (open.length) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body });
+              core.warning(`Alerte mise à jour : #${open[0].number}`);
+            } else {
+              const { data } = await github.rest.issues.create({ ...context.repo, labels: [label],
+                title: `🚨 Campagne de test en échec — ${new Date().toISOString().slice(0, 10)}`, body });
+              core.warning(`Alerte ouverte : #${data.number}`);
+            }

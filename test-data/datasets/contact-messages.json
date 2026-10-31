@@ -1,0 +1,43 @@
+{
+  "dataset": "contact-messages",
+  "version": "1.1.0",
+  "description": "Messages de contact : un cas nominal et un cas par règle de validation de /api/message.",
+  "updated": "2026-10-31",
+  "cases": {
+    "valide": {
+      "name": "Amira Ben Salah",
+      "email": "amira.bensalah@example.com",
+      "phone": "+21620123456",
+      "subject": "Disponibilité en décembre",
+      "description": "Bonjour, la chambre double est-elle disponible du 12 au 15 décembre ? Merci."
+    },
+    "telephone-court": {
+      "name": "Karim Trabelsi",
+      "email": "karim.trabelsi@example.com",
+      "phone": "12345",
+      "subject": "Question tarif",
+      "description": "Bonjour, quel est le tarif pour deux nuits en chambre simple ?"
+    },
+    "sujet-court": {
+      "name": "Sana Gharbi",
+      "email": "sana.gharbi@example.com",
+      "phone": "+21698765432",
+      "subject": "Qst",
+      "description": "Bonjour, acceptez-vous les animaux de compagnie dans les chambres ?"
+    },
+    "message-court": {
+      "name": "Youssef Mansour",
+      "email": "youssef.mansour@example.com",
+      "phone": "+21655443322",
+      "subject": "Parking sur place",
+      "description": "Parking ?"
+    },
+    "email-invalide": {
+      "name": "Leila Haddad",
+      "email": "leila.haddad@",
+      "phone": "+21622334455",
+      "subject": "Petit-déjeuner",
+      "description": "Bonjour, le petit-déjeuner est-il inclus dans le prix de la chambre ?"
+    }
+  }
+}

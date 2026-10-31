@@ -1,0 +1,41 @@
+{
+  "name": "booking-quality-suite",
+  "version": "1.0.0",
+  "description": "Quality engineering showcase: Gherkin acceptance criteria, Playwright E2E/integration/API tests in TypeScript, k6 load tests, Bruno/Postman, test data, SonarQube, GitHub Actions & Azure DevOps.",
+  "scripts": {
+    "bddgen": "bddgen",
+    "test": "bddgen && playwright test",
+    "test:e2e": "bddgen && playwright test --project=e2e",
+    "test:api": "playwright test --project=api",
+    "test:integration": "playwright test --project=integration",
+    "test:smoke": "bddgen && playwright test --grep @smoke",
+    "test:bruno": "cd api-collections/bruno && npx -y @usebruno/cli@2 run --env demo --reporter-junit ../../reports/junit/bruno.xml",
+    "test:postman": "npx -y newman@6 run api-collections/postman/restful-booker.postman_collection.json --reporters cli,junit --reporter-junit-export reports/junit/postman.xml",
+    "load:smoke": "k6 run load/k6/smoke.js",
+    "load": "k6 run --summary-export=reports/k6/load-summary.json load/k6/load.js",
+    "data:validate": "node scripts/test-data.mjs validate",
+    "data:publish": "node scripts/test-data.mjs publish",
+    "data:bump": "node scripts/test-data.mjs bump",
+    "report": "node scripts/campaign-report.mjs",
+    "report:open": "playwright show-report reports/html",
+    "lint": "eslint .",
+    "lint:report": "eslint . -f json -o reports/eslint/eslint.json",
+    "typecheck": "bddgen && tsc --noEmit"
+  },
+  "author": "Wassim Askri",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "eslint-plugin-playwright": "^2.12.1",
+    "playwright-bdd": "^9.2.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

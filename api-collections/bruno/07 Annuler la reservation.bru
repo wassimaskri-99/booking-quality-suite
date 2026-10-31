@@ -1,0 +1,21 @@
+meta {
+  name: 07 Annuler la réservation
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/booking/{{bookingId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Cookie: token={{token}}
+}
+
+tests {
+  test("TC-API-08 - la réservation est supprimée (201)", function () {
+    expect(res.getStatus()).to.equal(201);
+  });
+}

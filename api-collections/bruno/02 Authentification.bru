@@ -1,0 +1,29 @@
+meta {
+  name: 02 Authentification
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "{{username}}",
+    "password": "{{password}}"
+  }
+}
+
+script:post-response {
+  bru.setVar("token", res.getBody().token);
+}
+
+tests {
+  test("TC-API-02 - un jeton est renvoyé", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().token).to.be.a("string").and.not.empty;
+  });
+}

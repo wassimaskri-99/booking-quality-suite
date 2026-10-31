@@ -1,0 +1,22 @@
+meta {
+  name: 04 Consulter la réservation
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/booking/{{bookingId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("TC-API-04 - la réservation est consultable", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().totalprice).to.equal(240);
+  });
+}

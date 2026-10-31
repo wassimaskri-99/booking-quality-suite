@@ -1,0 +1,119 @@
+# Pipeline Azure DevOps équivalent au workflow GitHub Actions (.github/workflows/quality.yml).
+# Variables secrètes attendues dans la bibliothèque : SONAR_TOKEN (optionnel).
+
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: ['*']
+
+schedules:
+  - cron: '0 5 * * *' # campagne de nuit : 06:00 heure de Tunis
+    displayName: Campagne de nuit
+    branches:
+      include: [main]
+    always: true
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  NODE_VERSION: '22.x'
+  isNightly: ${{ eq(variables['Build.Reason'], 'Schedule') }}
+
+stages:
+  - stage: Static
+    displayName: Analyse statique & données
+    jobs:
+      - job: static
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+          - script: npm ci
+            displayName: Installer les dépendances
+          - script: npm run data:publish
+            displayName: Valider et publier les jeux de données
+          - script: npm run typecheck
+            displayName: Typage TypeScript
+          - script: npm run lint && npm run lint:report
+            displayName: ESLint
+          - script: npm audit --omit=dev --audit-level=high
+            displayName: Vulnérabilités des dépendances
+          # Nécessite l'extension SonarQube et une connexion de service « SonarQube ».
+          # - task: SonarQubePrepare@7
+          #   inputs: { SonarQube: 'SonarQube', scannerMode: 'cli', configMode: 'file' }
+          # - task: SonarQubeAnalyze@7
+          # - task: SonarQubePublish@7
+          - publish: reports
+            artifact: static-reports
+            condition: always()
+
+  - stage: Tests
+    displayName: Tests fonctionnels et non fonctionnels
+    dependsOn: Static
+    jobs:
+      - job: functional
+        displayName: E2E Gherkin, intégration, API (Playwright)
+        timeoutInMinutes: 30
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+          - script: npm ci && npx playwright install --with-deps chromium
+            displayName: Installer Playwright
+          - script: npm test
+            displayName: Exécuter la campagne
+            continueOnError: true
+          - script: npm run report && cat reports/campaign-summary.md
+            displayName: Rapport de synthèse de campagne
+            condition: always()
+          - task: PublishTestResults@2
+            displayName: Publier les résultats (onglet Tests)
+            condition: always()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: reports/junit/results.xml
+              testRunTitle: Campagne Playwright
+              failTaskOnFailedTests: true
+          - publish: reports
+            artifact: functional-reports
+            condition: always()
+
+      - job: apiCollections
+        displayName: Collections API (Bruno & Postman)
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+          - script: mkdir -p reports/junit && npm run test:bruno
+            displayName: Bruno CLI
+          - script: npm run test:postman
+            displayName: Postman (Newman)
+            condition: always()
+          - task: PublishTestResults@2
+            condition: always()
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: reports/junit/*.xml
+              testRunTitle: Collections API
+
+      - job: load
+        displayName: Charge (k6)
+        steps:
+          - script: |
+              sudo gpg -k
+              sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+              echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+              sudo apt-get update && sudo apt-get install -y k6
+            displayName: Installer k6
+          - script: mkdir -p reports/k6 && k6 run --summary-export=reports/k6/smoke-summary.json load/k6/smoke.js
+            displayName: Smoke de charge
+          - script: k6 run --summary-export=reports/k6/load-summary.json load/k6/load.js
+            displayName: Charge nominale (nuit)
+            condition: and(succeeded(), eq(variables.isNightly, true))
+          - publish: reports/k6
+            artifact: load-reports
+            condition: always()

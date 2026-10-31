@@ -1,0 +1,32 @@
+{
+  "dataset": "bookings",
+  "version": "1.0.0",
+  "description": "Réservations utilisées par les tests API, les collections Bruno/Postman et les tests de charge k6.",
+  "updated": "2026-10-31",
+  "cases": {
+    "standard": {
+      "firstname": "Wassim",
+      "lastname": "Test",
+      "totalprice": 240,
+      "depositpaid": true,
+      "bookingdates": { "checkin": "2027-01-10", "checkout": "2027-01-12" },
+      "additionalneeds": "Breakfast"
+    },
+    "sans-acompte": {
+      "firstname": "Nour",
+      "lastname": "Test",
+      "totalprice": 120,
+      "depositpaid": false,
+      "bookingdates": { "checkin": "2027-02-01", "checkout": "2027-02-02" },
+      "additionalneeds": "Late check-out"
+    },
+    "longue-duree": {
+      "firstname": "Hedi",
+      "lastname": "Test",
+      "totalprice": 1400,
+      "depositpaid": true,
+      "bookingdates": { "checkin": "2027-03-01", "checkout": "2027-03-15" },
+      "additionalneeds": "Airport transfer"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+import { defineConfig, devices } from '@playwright/test';
+import { defineBddConfig } from 'playwright-bdd';
+import { env } from './config/env';
+
+/**
+ * Les critères d'acceptance Gherkin (features/) sont transformés en tests
+ * Playwright par playwright-bdd (commande `bddgen`).
+ */
+const bddTestDir = defineBddConfig({
+  features: 'features/**/*.feature',
+  steps: ['steps/**/*.ts', 'fixtures/index.ts'],
+  outputDir: '.features-gen',
+});
+
+export default defineConfig({
+  timeout: 45_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  // Les applications de démo publiques sont parfois lentes : 2 relances en CI,
+  // et les tests relancés avec succès sont signalés « flaky » dans le rapport.
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'reports/html', open: 'never' }],
+    ['junit', { outputFile: 'reports/junit/results.xml' }],
+    ['json', { outputFile: 'reports/json/results.json' }],
+  ],
+  use: {
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+  projects: [
+    {
+      name: 'api',
+      testDir: 'tests/api',
+      use: { baseURL: env.bookingApiUrl },
+    },
+    {
+      name: 'integration',
+      testDir: 'tests/integration',
+      use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
+    },
+    {
+      name: 'e2e',
+      testDir: bddTestDir,
+      use: { ...devices['Desktop Chrome'], baseURL: env.webUrl },
+    },
+  ],
+});
