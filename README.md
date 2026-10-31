@@ -43,6 +43,25 @@ tests de charge, jeux de données versionnés, analyse de code, pipelines CI/CD 
 
 ---
 
+## Playwright : 51 des 53 pages applicables de la documentation officielle
+
+Le détail page par page, avec le fichier et le commit correspondants, est dans
+**[`docs/playwright-couverture.md`](docs/playwright-couverture.md)**. En résumé :
+
+| Domaine | Fonctionnalités appliquées |
+|---|---|
+| Organisation | 10 projets, setup / teardown (`health`, `auth`, `cleanup`), `storageState`, fixtures test / worker / auto / option |
+| Assertions | web-first, `expect.soft`, `expect.poll`, `toPass`, matcher personnalisé `toBeValidBooking` |
+| Annotations | tags de traçabilité et de sévérité, `test.fail()` pour les anomalies ouvertes, `test.step({ box })`, mode `serial` |
+| Réseau | `waitForRequest`, `route.fulfill` (succès / 500), `route.abort`, bouchon d'API démarré par `webServer` |
+| Navigateur | horloge figée, émulation mobile (Pixel 7 + tap), langue / fuseau / thème / géolocalisation, deux contextes (visiteur + admin), événements console |
+| Snapshots | `toMatchAriaSnapshot`, `toHaveScreenshot` avec références par OS |
+| Accessibilité | audit axe WCAG 2.1 A/AA — **a détecté une anomalie critique réelle (ANO-002)** |
+| CI | sharding sur 3 machines dans l'image Docker Playwright, `merge-reports`, reporter personnalisé par sévérité |
+| Outillage | UI mode, debug, trace viewer, codegen, `--last-failed`, `--only-changed`, `--repeat-each`, VS Code, **Playwright Test Agents pour Claude Code** |
+
+---
+
 ## Architecture
 
 ```
@@ -51,7 +70,14 @@ steps/               Implémentation des étapes                       ├─ E2
 pages/               Page Objects                                   ─┘
 fixtures/            Fixtures Playwright + liaison BDD
 tests/integration/   Cohérence API ↔ interface
-tests/api/           API : CRUD, sécurité (Playwright request)
+tests/api/           API : CRUD, sécurité, contrat, cycle de vie (Playwright request)
+tests/ui/            Réseau, horloge, émulation, mobile, snapshots, accessibilité, événements
+tests/admin/         Back-office avec session enregistrée, deux contextes
+tests/setup/         Setup / teardown : santé des environnements, authentification
+support/             Matchers personnalisés
+reporters/           Reporter personnalisé par sévérité
+mock-server/         Bouchon de l'API (projet api-offline, démarré par webServer)
+.claude/agents/      Playwright Test Agents (planner, generator, healer)
 api/                 Client de l'API de réservation
 api-collections/     Bruno et Postman (mêmes scénarios, exécutés en CI)
 load/k6/             Tests de charge
@@ -82,7 +108,9 @@ push / PR / nuit
 npm ci
 npx playwright install chromium
 
-npm test                  # campagne complète (E2E Gherkin + intégration + API)
+npm test                  # campagne complète (tous les projets)
+npm run test:ui           # mode UI : lancer et regarder les tests en direct
+npm run test:offline      # API contre le bouchon local, sans réseau
 npm run test:smoke        # tests @smoke uniquement
 npm run test:api          # API uniquement
 npm run test:bruno        # collection Bruno

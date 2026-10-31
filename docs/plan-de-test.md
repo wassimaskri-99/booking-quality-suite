@@ -62,6 +62,15 @@ Formulaire d'anomalie : [`.github/ISSUE_TEMPLATE/anomalie.yml`](../.github/ISSUE
 | Majeure | Fonctionnalité secondaire en échec | Sprint suivant |
 | Mineure | Défaut cosmétique ou de libellé | Backlog |
 
+### Anomalies ouvertes
+
+| ID | Sévérité | Description | Détectée par |
+|---|---|---|---|
+| ANO-001 | Majeure | L'API accepte une réservation dont le départ précède l'arrivée | `TC-API-15` (`test.fail`) |
+| ANO-002 | Critique | Deux champs de date et le champ Message sans libellé accessible (WCAG 1.3.1 / 4.1.2) | Audit axe `TC-A11Y-01/02` |
+
+Les tests qui les documentent sont marqués `test.fail()` : ils deviennent rouges dès que l'anomalie est corrigée, pour rappeler de retirer le marqueur et de fermer l'anomalie.
+
 ## 7. Reporting et alertes
 
 - **Après chaque exécution** : rapport HTML Playwright, résultats JUnit, rapport de synthèse de campagne (`scripts/campaign-report.ts`) affiché dans le résumé du pipeline.

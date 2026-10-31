@@ -30,3 +30,22 @@ Statut d'automatisation : ✅ automatisé · 🧪 manuel / exploratoire
 | TC-PERF-01 | US-06 | Smoke de charge | Charge | — | 1 VU, p95 < 2 s, 0 % d'erreur | Majeure | ✅ |
 | TC-PERF-02 | US-06 | Charge nominale | Charge | — | 5 VUs / 1 min, p95 < 2 s, erreurs < 1 % | Majeure | ✅ |
 | TC-EXP-01 | US-04 | Exploration des cas limites de dates | API | Bruno | Comportement documenté dans une anomalie si incohérent | Majeure | 🧪 |
+
+## Cas ajoutés avec les fonctionnalités avancées de Playwright
+
+Voir [`docs/playwright-couverture.md`](playwright-couverture.md) pour la fonctionnalité Playwright utilisée par chaque cas.
+
+| ID | US | Titre | Type | Résultat attendu | Sévérité | Auto |
+|---|---|---|---|---|---|---|
+| TC-API-10 → 14 | US-04 | Contrat de réservation (matcher personnalisé, soft, poll, toPass) | API | Contrat respecté, recherche à jour | Majeure | ✅ |
+| TC-API-15 | US-04 | Dates incohérentes refusées | API | `400` — **ANO-001 ouverte**, test attendu en échec | Majeure | ✅ |
+| Cycle de vie 1 → 3 | US-04 | Création → modification → annulation (série) | API | Chaque étape réussit dans l'ordre | Critique | ✅ |
+| TC-ADM-03 / 04 | US-03 | Back-office avec session enregistrée | E2E | Accès direct, chambres de l'API listées | Critique | ✅ |
+| TC-ADM-05 | US-02 / US-03 | Message visiteur reçu par l'admin (2 contextes) | Intégration | Message visible dans la boîte | Critique | ✅ |
+| TC-NET-01 → 04 | US-02 | Requête émise, bouchons succès / 500, images bloquées | UI / Réseau | Payload exact, pas de faux succès | Majeure | ✅ |
+| TC-CLK-01 / 02 | US-01 | Dates par défaut avec horloge figée | UI | Arrivée = aujourd'hui, départ = lendemain | Majeure | ✅ |
+| TC-EMU-01 → 03 | US-01 | Langue, fuseau, thème, géolocalisation émulés | UI | Contexte exposé à la page, accueil fonctionnel | Mineure | ✅ |
+| TC-MOB-01 → 03 | US-01 / US-02 | Parcours mobile tactile (Pixel 7) | UI mobile | Pas de défilement horizontal, tap fonctionnel | Critique | ✅ |
+| TC-SNAP-01 → 03 | US-01 | Structure ARIA et rendu visuel de la navigation | UI | Aucun écart structurel ou visuel | Majeure | ✅ |
+| TC-A11Y-01 → 03 | US-01 / US-02 | Audit WCAG 2.1 A/AA (axe) | Accessibilité | **ANO-002 ouverte** ; aucune autre violation critique | Critique | ✅ |
+| TC-EVT-01 / 02 | US-01 / US-02 | Aucune exception JavaScript | UI | `pageerror` vide | Majeure | ✅ |
