@@ -17,7 +17,11 @@ export class HomePage {
   constructor(private readonly page: Page) {
     this.welcomeTitle = page.getByRole('heading', { level: 1 });
     this.roomsHeading = page.getByRole('heading', { name: 'Our Rooms' });
-    this.bookNowLinks = page.getByRole('link', { name: 'Book now' });
+    // Uniquement les boutons des cartes chambres : la bannière a aussi un « Book Now »
+    // qui pointe vers le formulaire de disponibilité, pas vers une chambre.
+    this.bookNowLinks = page
+      .getByRole('link', { name: 'Book now' })
+      .and(page.locator('a[href^="/reservation/"]'));
     this.contact = {
       name: page.getByTestId('ContactName'),
       email: page.getByTestId('ContactEmail'),
